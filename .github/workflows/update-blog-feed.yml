@@ -1,0 +1,28 @@
+name: Refresh clinic blog feed
+on:
+  schedule:
+    - cron: '7 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  update-feed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install image library
+        run: pip install --quiet pillow
+      - name: Fetch latest RSS posts and thumbnails
+        run: python tools/update_blog_feed.py
+      - name: Commit cached feed if changed
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A assets/blog-feed.json assets/blog-thumbs
+          if ! git diff --cached --quiet; then
+            git commit -m 'chore: refresh Naver blog feed'
+            git push
+          fi
