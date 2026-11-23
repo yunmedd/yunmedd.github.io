@@ -372,9 +372,8 @@
     var top = live.slice(0, 2), key = top.map(function (n) { return n.url; }).join('|');
     var dismissed = ''; try { dismissed = sessionStorage.getItem('noticeHide') || ''; } catch (e) { }
     if (bar && dismissed !== key) {
-      bar.classList.toggle('two', top.length > 1);
-      bar.innerHTML = '<b>공지</b>' + top.map(function (n) { return '<a href="' + safe(n.url) + '" target="_blank" rel="noopener noreferrer">' + esc(n.title) + '</a>'; }).join('')
-        + (top.length === 1 && top[0].date ? '<time>' + esc(top[0].date.replace(/-/g, '.')) + '</time>' : '')
+      // v1.7: 공지마다 한 줄씩(각 줄에 '공지' 표시) 위아래로
+      bar.innerHTML = '<div class="nrows">' + top.map(function (n) { return '<div class="nrow"><b>공지</b><a href="' + safe(n.url) + '" target="_blank" rel="noopener noreferrer">' + esc(n.title) + '</a>' + (n.date ? '<time>' + esc(n.date.replace(/-/g, '.')) + '</time>' : '') + '</div>'; }).join('') + '</div>'
         + '<button type="button" aria-label="공지 닫기"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></button>';
       bar.hidden = false;
       $('button', bar).addEventListener('click', function () { bar.hidden = true; try { sessionStorage.setItem('noticeHide', key); } catch (e) { } });
