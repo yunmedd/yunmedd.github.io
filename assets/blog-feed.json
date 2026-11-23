@@ -1,6 +1,6 @@
 {
   "source": "rss.blog.naver.com/yunmedd.xml",
-  "updatedAt": "2026-11-23T08:41:00+00:00",
+  "updatedAt": "2026-11-23T10:17:55+00:00",
   "notices": [
     {
       "title": "12월 진료일정안내, 25일 성탄절 휴진과 연휴 전 챙길 것 두류동 윤형진내과",
@@ -24,6 +24,13 @@
     }
   ],
   "posts": [
+    {
+      "title": "감삼동내과 호흡기 진료는 어떤 질환을 다룰까요? 기침·숨참 원인별 질환과 폐기능검사 윤형진내과",
+      "url": "https://blog.naver.com/yunmedd/224488789706",
+      "date": "2026-11-23",
+      "cat": "호흡기",
+      "thumb": "assets/blog-thumbs/224488789706-5ea62c2b.webp"
+    },
     {
       "title": "두류동내과 내분비 진료는 어떤 질환을 다룰까요? 당뇨·갑상선·이상지질혈증 증상과 검사 방법 윤형진내과",
       "url": "https://blog.naver.com/yunmedd/224483323463",
@@ -100,13 +107,6 @@
       "date": "2026-10-27",
       "cat": "건강칼럼",
       "thumb": "assets/blog-thumbs/224455371041-6fa19d8f.webp"
-    },
-    {
-      "title": "두류동내과 기침이 몇 주째 안 낫는데 역류성 식도염 때문일까요? 만성기침 원인 윤형진내과",
-      "url": "https://blog.naver.com/yunmedd/224454388685",
-      "date": "2026-10-26",
-      "cat": "건강칼럼",
-      "thumb": "assets/blog-thumbs/224454388685-074a5c44.webp"
     }
   ]
 }
