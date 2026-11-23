@@ -321,42 +321,66 @@
     }
   }
 
-  /* ---------- Blog notices (진료안내 category / [휴진]·[진료안내] title) ---------- */
-  function noticeEnd(n) {
-    var pub = n.date ? new Date(n.date + 'T00:00:00+09:00') : new Date(), end = null, m, re = /(\d{1,2})\s*월\s*(\d{1,2})\s*일/g;
+  /* ---------- Blog notices (진료안내 category / [휴진]·[진료안내] title) ----------
+     v1.7 노출 기간: 제목의 '12월'·'12월 25일'로 대상 월을 읽어
+     · 대상 월 1일 기준 8일 전(= 전달 말일 7일 전) 0시부터 노출 → 말일 7일 전부터는 당월 + 다음 달 공지가 함께 보임
+     · 끝: 날짜가 있으면 그 날, 월만 있으면 그 달 말일 (게시 후 최대 60일)
+     · 월이 없는 공지: 게시일부터 14일 */
+  function kst(y, mo, d, end) { return new Date(y + '-' + ('0' + mo).slice(-2) + '-' + ('0' + d).slice(-2) + (end ? 'T23:59:59+09:00' : 'T00:00:00+09:00')); }
+  function noticeWin(n) {
+    var pub = n.date ? new Date(n.date + 'T00:00:00+09:00') : new Date(), py = pub.getFullYear(), pm = pub.getMonth() + 1;
+    var yr = function (mo) { return mo < pm - 6 ? py + 1 : py; };   // 11월 게시글의 '1월'은 다음 해
+    var first = null, end = null, m, re = /(\d{1,2})\s*월\s*(\d{1,2})\s*일/g;
     while ((m = re.exec(n.title))) {
-      var y = pub.getFullYear(), mo = +m[1], d = +m[2];
-      if (mo < pub.getMonth() + 1 - 6) y += 1;
-      var e = new Date(y + '-' + ('0' + mo).slice(-2) + '-' + ('0' + d).slice(-2) + 'T23:59:59+09:00');
-      if (!isNaN(e) && (!end || e > end)) end = e;
+      var mo = +m[1], dd = +m[2]; if (mo < 1 || mo > 12) continue;
+      var e = kst(yr(mo), mo, dd, true);
+      if (isNaN(e)) continue;
+      if (!end || e > end) end = e;
+      if (!first || e < first.at) first = { at: e, y: yr(mo), mo: mo };
     }
-    if (!end) { // '11월 진료안내'처럼 월만 있으면 그 달 말일까지
+    if (!first) { // '11월 진료안내'처럼 월만 있으면 그 달 말일까지
       var mm = /(\d{1,2})\s*월(?!\s*\d)/.exec(n.title);
       if (mm && +mm[1] >= 1 && +mm[1] <= 12) {
-        var yy = pub.getFullYear(), m2 = +mm[1]; if (m2 < pub.getMonth() + 1 - 6) yy += 1;
-        var last = new Date(yy, m2, 0).getDate();
-        end = new Date(yy + '-' + ('0' + m2).slice(-2) + '-' + ('0' + last).slice(-2) + 'T23:59:59+09:00');
+        var m2 = +mm[1], y2 = yr(m2);
+        first = { y: y2, mo: m2 };
+        end = kst(y2, m2, new Date(y2, m2, 0).getDate(), true);
       }
     }
+    var start = pub, mon = 0;
+    if (first) {
+      var s0 = new Date(kst(first.y, first.mo, 1).getTime() - 8 * 864e5);   // 전달 말일 7일 전 0시
+      if (s0 > start) start = s0;
+      mon = first.mo;
+    } else end = new Date(pub.getTime() + 14 * 864e5);
     var cap = new Date(pub.getTime() + 60 * 864e5);
-    if (!end) end = new Date(pub.getTime() + 14 * 864e5);
-    return end > cap ? cap : end;
+    return { start: start, end: end > cap ? cap : end, mon: mon };
   }
   function renderNotices(j) {
     if (!j || !j.notices) return;
-    var now = new Date(), live = j.notices.filter(function (n) { return n && n.title && n.url && noticeEnd(n) >= now; }).slice(0, 3);
+    var now = new Date(), live = [];
+    j.notices.forEach(function (n) {
+      if (!n || !n.title || !n.url) return;
+      var w = noticeWin(n);
+      if (w.start <= now && now <= w.end) live.push({ n: n, w: w });
+    });
+    live.sort(function (a, b) { return a.w.start - b.w.start || (b.n.date || '').localeCompare(a.n.date || ''); });   // 당월 → 다음 달
+    live = live.slice(0, 3).map(function (x) { x.n.mon = x.w.mon; return x.n; });
     var bar = $('#noticeBar'), card = $('[data-notice-card]');
     var esc = function (t) { var d0 = d.createElement('div'); d0.textContent = t; return d0.innerHTML; };
     var safe = function (u) { return /^https:\/\/(m\.)?blog\.naver\.com\//.test(u) ? u : '#'; };
     if (!live.length) { if (bar) bar.hidden = true; if (card) card.hidden = true; return; }
+    var top = live.slice(0, 2), key = top.map(function (n) { return n.url; }).join('|');
     var dismissed = ''; try { dismissed = sessionStorage.getItem('noticeHide') || ''; } catch (e) { }
-    if (bar && dismissed !== live[0].url) {
-      bar.innerHTML = '<b>공지</b><a href="' + safe(live[0].url) + '" target="_blank" rel="noopener noreferrer">' + esc(live[0].title) + '</a>' + (live[0].date ? '<time>' + esc(live[0].date.replace(/-/g, '.')) + '</time>' : '') + '<button type="button" aria-label="공지 닫기"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></button>';
+    if (bar && dismissed !== key) {
+      bar.classList.toggle('two', top.length > 1);
+      bar.innerHTML = '<b>공지</b>' + top.map(function (n) { return '<a href="' + safe(n.url) + '" target="_blank" rel="noopener noreferrer">' + esc(n.title) + '</a>'; }).join('')
+        + (top.length === 1 && top[0].date ? '<time>' + esc(top[0].date.replace(/-/g, '.')) + '</time>' : '')
+        + '<button type="button" aria-label="공지 닫기"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></button>';
       bar.hidden = false;
-      $('button', bar).addEventListener('click', function () { bar.hidden = true; try { sessionStorage.setItem('noticeHide', live[0].url); } catch (e) { } });
+      $('button', bar).addEventListener('click', function () { bar.hidden = true; try { sessionStorage.setItem('noticeHide', key); } catch (e) { } });
     }
     if (card) {
-      card.innerHTML = '<b>진료 공지</b>' + live.map(function (n) { return '<a href="' + safe(n.url) + '" target="_blank" rel="noopener noreferrer">' + esc(n.title) + (n.date ? '<small>' + esc(n.date.replace(/-/g, '.')) + ' 블로그 공지</small>' : '') + '</a>'; }).join('');
+      card.innerHTML = '<b>진료 공지</b>' + live.map(function (n) { return '<a href="' + safe(n.url) + '" target="_blank" rel="noopener noreferrer">' + (n.mon && n.title.trim().indexOf(n.mon + '월') !== 0 ? '<em>' + n.mon + '월</em>' : '') + esc(n.title) + (n.date ? '<small>' + esc(n.date.replace(/-/g, '.')) + ' 블로그 공지</small>' : '') + '</a>'; }).join('');
       card.hidden = false;
     }
   }

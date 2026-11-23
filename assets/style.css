@@ -1037,3 +1037,9 @@ body{background:var(--paper)}
   .fee-list td.item{font-weight:650;color:var(--ink)}
   .fee-list td.memo{grid-column:1/-1;padding-top:0;font-size:13px}
 }
+
+/* v1.7: 공지 — 말일 7일 전부터 당월·다음 달 공지 2개 */
+.notice-bar.two a{flex:1 1 0}
+.notice-bar.two a+a{padding-left:12px;border-left:1px solid var(--line)}
+.notice-card a em{font-style:normal;display:inline-block;margin-right:7px;padding:1px 7px;border-radius:6px;background:#fff;border:1px solid #f0d6c0;font-size:12px;font-weight:800;color:#a04b20;vertical-align:1px}
+@media (max-width:620px){.notice-bar.two{flex-wrap:wrap;row-gap:6px}.notice-bar.two a{flex:1 1 100%;order:2}.notice-bar.two a+a{padding-left:0;border-left:0}.notice-bar.two b{order:1}.notice-bar.two button{order:1;margin-left:auto}}
