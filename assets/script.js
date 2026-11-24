@@ -321,6 +321,18 @@
     }
   }
 
+  /* ---------- v1.8 준비 중 안내(인스타그램 등 data-soon) ---------- */
+  (function () {
+    var t, el;
+    d.addEventListener('click', function (e) {
+      var b = e.target.closest && e.target.closest('[data-soon]'); if (!b) return;
+      e.preventDefault();
+      if (!el) { el = d.createElement('div'); el.className = 'soon-toast'; el.setAttribute('role', 'status'); d.body.appendChild(el); }
+      el.textContent = b.getAttribute('data-soon'); el.classList.add('on');
+      clearTimeout(t); t = setTimeout(function () { el.classList.remove('on'); }, 2600);
+    });
+  })();
+
   /* ---------- Blog notices (진료안내 category / [휴진]·[진료안내] title) ----------
      v1.7 노출 기간: 제목의 '12월'·'12월 25일'로 대상 월을 읽어
      · 대상 월 1일 기준 8일 전(= 전달 말일 7일 전) 0시부터 노출 → 말일 7일 전부터는 당월 + 다음 달 공지가 함께 보임
